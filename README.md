@@ -57,7 +57,7 @@ A comprehensive platform that helps citizens discover, understand, and access go
 
 1. Clone the repository
 ```bash
-git clone https://github.com/9582anupam/YojanaMitr
+git https://github.com/SomshekharArabali/YojanaMitr
 ```
 
 2. Frontend Setup
