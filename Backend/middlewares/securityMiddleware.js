@@ -70,8 +70,8 @@ export const secureApiMiddleware = (req, res, next) => {
     // Set secure HTTP-only cookie that expires in 24 hours
     res.cookie('secure_browser_token', token, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000
     });
     
@@ -99,8 +99,8 @@ export const setBrowserIdentification = (req, res, next) => {
     // Set identification cookie (visible to JavaScript to help with analytics)
     res.cookie('browser_id', browserId, {
         httpOnly: false,
-        secure: true,
-        sameSite: 'lax', 
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 365 * 24 * 60 * 60 * 1000 // 1 year
     });
     

@@ -15,18 +15,18 @@ import { Link, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import "./auth.css";
 import axios from "axios";
+import { toast } from 'react-hot-toast';
 
-// Define the custom theme
 const theme = createTheme({
     palette: {
         primary: {
-            main: "#007bff", // Primary color (primary-blue)
+            main: "#007bff",
         },
         secondary: {
-            main: "#0056b3", // Secondary color (secondary-blue)
+            main: "#0056b3",
         },
         background: {
-            default: "#f0f5f9", // Background color (background-light)
+            default: "#f0f5f9",
         },
     },
 });
@@ -55,11 +55,12 @@ const Signup = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [error, setError] = useState(""); // General error message
-    const [nameError, setNameError] = useState(""); // Email-specific error
-    const [emailError, setEmailError] = useState(""); // Email-specific error
-    const [passwordError, setPasswordError] = useState(""); // Password-specific error
-    const [isSubmitted, setIsSubmitted] = useState(false); // Track submission
+    const [error, setError] = useState("");
+    const [nameError, setNameError] = useState("");
+    const [emailError, setEmailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (event) => {
@@ -70,6 +71,7 @@ const Signup = () => {
         setEmailError("");
         setPasswordError("");
 
+        // Validation
         if (!name || !email || !password) {
             if (!name) setNameError("Name is required");
             if (!email) setEmailError("Email is required");
@@ -87,7 +89,12 @@ const Signup = () => {
             return;
         }
 
-        const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+        const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+        
+        console.log('Attempting signup to:', `${BACKEND_URL}/api/v1/users/signup`);
+        
+        setLoading(true);
+        
         try {
             const response = await axios.post(
                 `${BACKEND_URL}/api/v1/users/signup`,
@@ -96,20 +103,37 @@ const Signup = () => {
                     email,
                     password,
                 },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    withCredentials: true
+                }
             );
-            console.log("Signup success:", response.data.success);
+            
+            console.log("Signup success:", response.data);
+            toast.success('Account created successfully!');
             navigate("/login");
         } catch (error) {
+            console.error('Signup error:', error);
+            
             if (error.response && error.response.data) {
-                setError(error.response.data.message);
+                setError(error.response.data.message || "Signup failed");
+                toast.error(error.response.data.message || "Signup failed");
+            } else if (error.request) {
+                setError("Cannot connect to server. Please check your connection.");
+                toast.error("Cannot connect to server");
             } else {
                 setError("An error occurred. Please try again.");
+                toast.error("An error occurred");
             }
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleGoogleSignUp = async () => {
-        // Handle Google sign-up logic here
+        toast.info('Google Sign Up coming soon!');
     };
 
     return (
@@ -199,7 +223,8 @@ const Signup = () => {
                                 <Typography
                                     color="error"
                                     variant="body2"
-                                    align="center">
+                                    align="center"
+                                    sx={{ mt: 2 }}>
                                     {error}
                                 </Typography>
                             )}
@@ -208,8 +233,9 @@ const Signup = () => {
                                 fullWidth
                                 variant="contained"
                                 color="primary"
+                                disabled={loading}
                                 sx={{ color: "white" }}>
-                                Sign Up
+                                {loading ? 'Signing up...' : 'Sign Up'}
                             </SubmitButton>
                             <Button
                                 fullWidth

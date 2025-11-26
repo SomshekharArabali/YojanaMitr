@@ -16,13 +16,11 @@ export const generateRecommendations = async (userId, options) => {
             ]
         };
 
-        // Add Category-interests matching if user has interests
+        // Add schemeCategory-interests matching if user has interests
         if (userProfile.interests && userProfile.interests.length > 0) {
             query.$and.push({
-                Category: {
-                    $elemMatch: {
-                        $in: userProfile.interests
-                    }
+                schemeCategory: {
+                    $in: userProfile.interests
                 }
             });
         }
@@ -33,7 +31,7 @@ export const generateRecommendations = async (userId, options) => {
             limit: options.limit || 9,
             sort: { createdAt: -1 },
             lean: true,
-            select: 'schemeName schemeShortTitle state level nodalMinistryName Category tags detailedDescription_md'
+            select: 'schemeName schemeShortTitle state level nodalMinistryName schemeCategory tags detailedDescription_md'
         };
 
         let recommendations = await Schemev2.paginate(query, paginationOptions);
@@ -50,7 +48,7 @@ export const generateRecommendations = async (userId, options) => {
                         state: 1,
                         level: 1,
                         nodalMinistryName: 1,
-                        Category: 1,
+                        schemeCategory: 1,
                         tags: 1,
                         detailedDescription_md: 1
                     }
@@ -61,7 +59,7 @@ export const generateRecommendations = async (userId, options) => {
                 schemes: randomSchemes,
                 totalPages: 1,
                 currentPage: 1,
-                totalSchemes: 9,
+                totalSchemes: randomSchemes.length,
                 hasNextPage: false,
                 hasPrevPage: false
             };

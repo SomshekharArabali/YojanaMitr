@@ -16,18 +16,18 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import "./auth.css";
 import axios from "axios";
 import { UserContext } from "../../../context/UserContext";
+import { toast } from 'react-hot-toast';
 
-// Define the custom theme
 const theme = createTheme({
     palette: {
         primary: {
-            main: "#007bff", // Primary color (primary-blue)
+            main: "#007bff",
         },
         secondary: {
-            main: "#0056b3", // Secondary color (secondary-blue)
+            main: "#0056b3",
         },
         background: {
-            default: "#f0f5f9", // Background color (background-light)
+            default: "#f0f5f9",
         },
     },
 });
@@ -62,6 +62,7 @@ const Login = () => {
     const [generalError, setGeneralError] = useState("");
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { setIsUserLoggedIn } = useContext(UserContext);
 
@@ -81,28 +82,52 @@ const Login = () => {
             return;
         }
 
+        const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+        
+        console.log('Attempting login to:', `${BACKEND_URL}/api/v1/users/login`);
+        
+        setLoading(true);
+        
         try {
-            const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
             const response = await axios.post(
                 `${BACKEND_URL}/api/v1/users/login`,
                 { email, password },
-                { withCredentials: true }
+                { 
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }
             );
+            
             const data = response.data;
+            console.log('Login response:', data);
+            
             if (data.success) {
                 localStorage.setItem("accessToken", data.user.accessToken);
-                setIsUserLoggedIn(true); // Update login state
+                setIsUserLoggedIn(true);
+                toast.success('Login successful!');
                 navigate("/");
             } else {
                 setGeneralError(data.message);
+                toast.error(data.message);
                 console.log(data.message);
             }
         } catch (error) {
+            console.error('Login error:', error);
+            
             if (error.response && error.response.data) {
-                setError(error.response.data.message);
+                setError(error.response.data.message || "Login failed");
+                toast.error(error.response.data.message || "Login failed");
+            } else if (error.request) {
+                setError("Cannot connect to server. Please check your connection.");
+                toast.error("Cannot connect to server");
             } else {
                 setError("An error occurred. Please try again.");
+                toast.error("An error occurred");
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -164,7 +189,8 @@ const Login = () => {
                                 <Typography
                                     color="error"
                                     variant="body2"
-                                    align="center">
+                                    align="center"
+                                    sx={{ mt: 2 }}>
                                     {error}
                                 </Typography>
                             )}
@@ -173,14 +199,14 @@ const Login = () => {
                                 fullWidth
                                 variant="contained"
                                 color="primary"
+                                disabled={loading}
                                 sx={{ color: "white" }}>
-                                Login
+                                {loading ? 'Logging in...' : 'Login'}
                             </SubmitButton>
                             <GoogleButton
                                 fullWidth
                                 variant="outlined"
-                            // onClick={handleGoogleSignIn}
-                            >
+                                onClick={() => toast.info('Google login coming soon!')}>
                                 Login with Google
                             </GoogleButton>
                             <Box mt={2}>

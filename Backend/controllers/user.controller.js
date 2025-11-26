@@ -30,7 +30,7 @@ const signUp = async (req, res) => {
         // Check for minimum password length
         if (password.length < 6) {
             return res.status(400).json({
-                message: "Password must be at least 8 characters long",
+                message: "Password must be at least 6 characters long",
                 status: 400,
                 success: false,
             });
@@ -109,7 +109,6 @@ const login = async (req, res) => {
         // Generate access token and refresh token
         const { accessToken, newRefreshToken: refreshToken } = await generateAccessAndRefreshToken(user._id);
 
-
         // Fetch user information
         let userDetails = await User.findById(user._id).select(
             "-password -refreshToken"
@@ -118,13 +117,13 @@ const login = async (req, res) => {
         // Add accessToken to userDetails
         userDetails = { ...userDetails.toObject(), accessToken };
 
-        // sending accessToken and refreshToken as cookies
+        // Cookie options for cross-origin requests
         const options = {
-            httpOnly: true,  // Cannot be accessed via JavaScript (only sent with HTTP requests)
-            secure: process.env.NODE_ENV === 'production', // Set to true only in production (for HTTPS)
-            sameSite: 'None', // Allows cross-origin cookie transmission (important for cross-origin requests)
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         };
-
 
         // Send back the user's information
         return res
@@ -148,7 +147,7 @@ const login = async (req, res) => {
     }
 };
 
-// Generate a new access token and using the refresh token
+// Generate a new access token using the refresh token
 const refreshAccessToken = async (req, res) => {
     try {
         const incomingRefreshToken =
@@ -167,7 +166,6 @@ const refreshAccessToken = async (req, res) => {
             process.env.REFRESH_TOKEN_SECRET
         );
 
-
         const user = await User.findById(decoded?._id);
 
         if (!user) {
@@ -180,16 +178,17 @@ const refreshAccessToken = async (req, res) => {
 
         if (incomingRefreshToken !== user?.refreshToken) {
             return res.status(403).json({
-                message: "Unauthorized request: Refresh token in invalid or expired",
+                message: "Unauthorized request: Refresh token is invalid or expired",
                 status: 403,
                 success: false,
             });
         }
 
         const options = {
-            httpOnly: true,  // Cannot be accessed via JavaScript (only sent with HTTP requests)
-            secure: process.env.NODE_ENV === 'production', // Set to true only in production (for HTTPS)
-            sameSite: 'None', // Allows cross-origin cookie transmission (important for cross-origin requests)
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
         };
 
         const { accessToken, newRefreshToken } =
@@ -225,7 +224,6 @@ const logout = async (req, res) => {
         await User.findByIdAndUpdate(
             userId,
             {
-                // unset is used to remove this field from mongo, it is better than set refrehToken to null or undef
                 $unset: {
                     refreshToken: 1,
                 },
@@ -236,10 +234,11 @@ const logout = async (req, res) => {
         );
 
         const options = {
-            httpOnly: true,  // Cannot be accessed via JavaScript (only sent with HTTP requests)
-            secure: process.env.NODE_ENV === 'production', // Set to true only in production (for HTTPS)
-            sameSite: 'None', // Allows cross-origin cookie transmission (important for cross-origin requests)
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         };
+        
         return res
             .status(200)
             .clearCookie("accessToken", options)
@@ -258,7 +257,6 @@ const logout = async (req, res) => {
         });
     }
 };
-
 
 const getMe = async (req, res) => {
     try {
@@ -280,83 +278,6 @@ const getMe = async (req, res) => {
         });
     }
 };
-
-/*
-const userSchema = new mongoose.Schema(
-    {
-        name: {
-            type: String,
-            required: true
-        },
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            // Email validation pattern: matches a standard email format
-            match: new RegExp(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/),
-        },
-        password: {
-            type: String,
-            required: true,
-            minlength: 6,
-        },
-        phoneNumber: {
-            type: String,
-        },
-        role: {
-            type: String,
-            enum: ["USER", "ADMIN"],
-            default: "USER",
-            required: true,
-        },
-
-        refreshToken: {
-            type: String, // The refresh token itself
-            default: null,
-        },
-
-        // array of strings
-        interests: {
-            type: [String],
-        },
-
-        incomeGroup: {
-            type: String,
-            enum: ['EWS', 'General', 'OBC', 'SC', 'ST'],
-
-        },
-
-        state: {
-            type: String,
-        },
-
-        age: {
-            type: Number,
-        },
-
-        favorites: {
-            type: [mongoose.Schema.Types.ObjectId],
-            ref: 'Scheme',
-        },
-
-        gender: {
-            type: String,
-            enum: ['male', 'female', 'other'],
-        },
-
-        role: {
-            type: String,
-            enum: ["USER", "ADMIN"],
-            default: "USER",
-            required: true,
-        },
-
-
-    },
-
-    { timestamps: true }
-);
-*/
 
 const putData = async (req, res) => {
     try {
@@ -384,6 +305,5 @@ const putData = async (req, res) => {
         });
     }
 };
-
 
 export { signUp, login, refreshAccessToken, logout, getMe, putData };
