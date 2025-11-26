@@ -58,7 +58,7 @@ const Footer = () => {
                             <img src={mail} alt="mail" />
                             <p className="font-medium">
                                 <span className="font-bold">Email: </span>
-                                9582anupamk@gmail.com
+                                omie9284@gmail.com
                             </p>
                         </div>
                     </div>
